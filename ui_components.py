@@ -2,7 +2,6 @@ import discord
 from discord.ui import *
 from dotenv import load_dotenv
 import os
-
 load_dotenv()
 provider_url = os.getenv('PROVIDER_URL')
 
@@ -16,7 +15,6 @@ class Movie:
         self.imdb_id = imdb_id
         self.name = name
 
-
 class TVShow:
     def __init__(self, series, season=1, episode=1):
         self.imdb_id = series['imdbID']
@@ -28,47 +26,47 @@ class NextButton(Button):
     def __init__(self, embed, tvshow):
         self.embed = embed
         self.tvshow = tvshow
-        super().__init__(label='Next Episode')        
+        super().__init__(label='Next Episode', custom_id='next_button')        
 
     async def callback(self, interaction: discord.Interaction):
         self.tvshow.episode += 1
         self.embed.url = f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}'
-        await interaction.response.edit_message(content=f'Season {self.tvshow.season} Episode {self.tvshow.episode}', view=self.view, embed=self.embed)
+        await interaction.response.edit_message(content=f'{self.tvshow.title} S{self.tvshow.season} E{self.tvshow.episode}', view=self.view, embed=self.embed)
 
 class PreviousButton(Button):
     def __init__(self, embed, tvshow):
         self.embed = embed
         self.tvshow = tvshow
-        super().__init__(label='Previous Episode')
+        super().__init__(label='Previous Episode', custom_id='previous_button')
 
     async def callback(self, interaction: discord.Interaction):
         self.tvshow.episode = max(1, self.tvshow.episode - 1)
         self.embed.url = f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}'
-        await interaction.response.edit_message(content=f'Season {self.tvshow.season} Episode {self.tvshow.episode}', view=self.view, embed=self.embed)
+        await interaction.response.edit_message(content=f'{self.tvshow.title} S{self.tvshow.season} E{self.tvshow.episode}', view=self.view, embed=self.embed)
 
 class NextSeasonButton(Button):
     def __init__(self, embed, tvshow):
         self.embed = embed
         self.tvshow = tvshow
-        super().__init__(label='Next Season')        
+        super().__init__(label='Next Season', custom_id='next_season_button')        
 
     async def callback(self, interaction: discord.Interaction):
         self.tvshow.season += 1
         self.tvshow.episode = 1
         self.embed.url = f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}'
-        await interaction.response.edit_message(content=f'Season {self.tvshow.season} Episode {self.tvshow.episode}', view=self.view, embed=self.embed)
+        await interaction.response.edit_message(content=f'{self.tvshow.title} S{self.tvshow.season} E{self.tvshow.episode}', view=self.view, embed=self.embed)
 
 class PreviousSeasonButton(Button):
     def __init__(self, embed, tvshow):
         self.embed = embed
         self.tvshow = tvshow
-        super().__init__(label='Previous Season')
+        super().__init__(label='Previous Season', custom_id='previous_season_button')
     
     async def callback(self, interaction: discord.Interaction):
         self.tvshow.season = max(1, self.tvshow.season - 1)
         self.tvshow.episode = 1
         self.embed.url = f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}'
-        await interaction.response.edit_message(content=f'Season {self.tvshow.season} Episode {self.tvshow.episode}', view=self.view, embed=self.embed)
+        await interaction.response.edit_message(content=f'{self.tvshow.title} S{self.tvshow.season} E{self.tvshow.episode}', view=self.view, embed=self.embed)
 
 class SeriesButton(Button):
     def __init__(self, tvshow, ctx, bot):
@@ -85,7 +83,7 @@ class SeriesButton(Button):
         else:
             thread = await self.ctx.channel.create_thread(name=self.tvshow.title, type=discord.ChannelType.public_thread)
         
-        self.embed = discord.Embed(title=f'{self.tvshow.title}', url=f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}')
+        self.embed = discord.Embed(title=f'{self.tvshow.title}', url=f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}', color=discord.Color.blue())
         self.next_button = NextButton(embed=self.embed, tvshow=self.tvshow)
         self.previous_button = PreviousButton(embed=self.embed, tvshow=self.tvshow)
         self.next_season_button = NextSeasonButton(embed=self.embed, tvshow=self.tvshow)
@@ -94,27 +92,28 @@ class SeriesButton(Button):
         await thread.send("> Please provide the season number")
         season_msg = await self.bot.wait_for('message', check=lambda message: message.author == self.ctx.author)
         try:
-            season = int(season_msg.content)
+            self.tvshow.season = int(season_msg.content)
         except:
             await thread.send("> Please provide a valid season number")
             season_msg = await self.bot.wait_for('message', check=lambda message: message.author == self.ctx.author)
-            season = int(season_msg.content)
+            self.tvshow.season = int(season_msg.content)
+            
 
 
         await thread.send("> Please provide episode number")
         episode_msg = await self.bot.wait_for('message', check=lambda message: message.author == self.ctx.author)
         try:
-            episode = int(episode_msg.content)
+            self.tvshow.episode = int(episode_msg.content)
         except:
             await thread.send("> Please provide a valid episode number")
             episode_msg = await self.bot.wait_for('message', check=lambda message: message.author == self.ctx.author)
-            episode = int(episode_msg.content)
+            self.tvshow.episode = int(episode_msg.content)
 
 
-        embed = discord.Embed(title=f"{self.tvshow.title}", url=f'{provider_url}?video_id={self.tvshow.imdb_id}&s={season}&e={episode}')
-        view = View()
+        embed = discord.Embed(title=f"{self.tvshow.title}", url=f'{provider_url}?video_id={self.tvshow.imdb_id}&s={self.tvshow.season}&e={self.tvshow.episode}', color=discord.Color.blue())
+        view = View(timeout=None)
         view.add_item(self.previous_season_button)
-        view.add_item(self.next_season_button)
+        view.add_item(self.next_season_button)  
         view.add_item(self.previous_button)
         view.add_item(self.next_button)
-        await thread.send(content=self.tvshow.title, embed=embed, view=view)
+        await thread.send(content=f'{self.tvshow.title} S{self.tvshow.season} E{self.tvshow.episode}', embed=embed, view=view)
