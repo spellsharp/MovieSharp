@@ -5,9 +5,10 @@ from discord.ui import View
 from ui_components import MovieButton, Movie, TVShow, SeriesButton
 from dotenv import load_dotenv
 import os
+
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='$', intents=intents, help_command=None)
+bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
 load_dotenv()
@@ -19,9 +20,10 @@ async def on_ready():
 
 @bot.command()
 async def help(ctx):
+    print("help")
     embed = discord.Embed(title='Help', description='List of commands', color=discord.Color.blue())
-    embed.add_field(name='movie', value='`$movie Jurassic Park`', inline=False)
-    embed.add_field(name='tvshow', value='`$tvshow The Big Bang Theory`', inline=False)
+    embed.add_field(name='movie', value='`/movie Dune`', inline=False)
+    embed.add_field(name='tvshow', value='`/tvshow Seinfeld`', inline=False)
     await ctx.reply(embed=embed)
 
 @bot.command()
@@ -33,6 +35,7 @@ async def movie(ctx, *, name=None):
     try:
         response = requests.get(f"http://www.omdbapi.com/?apikey={omdb_token}&s={name}&type=movie")
         data = response.json()['Search']
+        print(f"/movie {name}")
         try:
             view = View(timeout=None)
             for movie in data:
@@ -59,6 +62,7 @@ async def tvshow(ctx, *, name=None):
     try:
         response = requests.get(f"http://www.omdbapi.com/?apikey={omdb_token}&s={name}&type=series")
         data = response.json()['Search']
+        print(f"/tvshow {name}")
         try:
             view =  View(timeout=None)
             for series in data:
