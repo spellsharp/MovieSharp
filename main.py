@@ -2,6 +2,18 @@ from bot import bot
 import os
 from dotenv import load_dotenv
 
+try:
+    with open('settings.csv', 'r') as file:
+        pass
+except FileNotFoundError:
+    with open('settings.csv', 'w') as file:
+        pass
+
+try:
+    with open('.env', 'r') as file:
+        pass
+except FileNotFoundError:
+    raise FileNotFoundError("Please create a .env file with the DISCORD_TOKEN and other variables.")
 
 @bot.event
 async def on_ready():
